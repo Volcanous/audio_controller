@@ -1,0 +1,9 @@
+cffi==2.0.0
+customtkinter==5.2.2
+darkdetect==0.8.0
+numpy==2.2.6
+packaging==25.0
+pycparser==2.23
+pydub==0.25.1
+sounddevice==0.5.3
+soundfile==0.13.1
