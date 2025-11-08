@@ -12,7 +12,7 @@ rem ---- activate venv ------------------------------------
 call venv-audio\Scripts\activate
 
 rem ---- install / upgrade dependencies --------------------
-python -m pip install customtkinter sounddevice soundfile pydub numpy
+python -m pip install -r requirements.txt
 
 rem ---- run the program ----------------------------------
 python "%~dp0audio_controller.py"

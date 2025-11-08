@@ -12,7 +12,7 @@ fi
 source venv-audio/bin/activate
 
 # ---- install / upgrade dependencies ------------------
-pip install customtkinter sounddevice soundfile pydub numpy
+pip install -r requirements.txt
 
 # ---- run the program --------------------------------
 python "$(dirname "$0")/audio_controller.py"

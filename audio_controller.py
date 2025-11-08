@@ -78,7 +78,7 @@ class AudioPlayer(threading.Thread):
                     # skip the heavy per-band processing to see if filters are the cause
                     # of choppiness. This helps isolate CPU-bound issues.
                     if all(abs(float(v)) < 0.01 for v in self.eq_values.values()):
-                        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.7
+                        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.1
                         gain_linear = 10.0 ** (gain_db / 20.0)
                         out_block = (block * gain_linear).astype('float32')
                         stream.write(out_block)
@@ -228,7 +228,7 @@ class AudioPlayer(threading.Thread):
             block = self._apply_biquad(block, b_treble, a_treble, treble_state)
 
         # Apply master gain once
-        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.7
+        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.1
         gain_linear = 10.0 ** (gain_db / 20.0)
         block = block * gain_linear
 
@@ -375,7 +375,7 @@ class AudioControllerApp(ctk.CTk):
 
     def _create_top_bar(self):
         frame = ctk.CTkFrame(self)
-        frame.pack(fill="x", padx=10, pady=5)
+        frame.pack(fill="x", padx=10, pady=5, ipady=5)
         self.timer_label = ctk.CTkLabel(frame, text="00:00 / 00:00", font=("Arial", 16))
         self.timer_label.pack(side="left", padx=10)
 
@@ -389,7 +389,7 @@ class AudioControllerApp(ctk.CTk):
 
     def _create_left_panel(self):
         frame = ctk.CTkFrame(self, width=350)
-        frame.pack(side="left", fill="y", padx=10, pady=10)
+        frame.pack(side="left", fill="y", padx=10, pady=11.5)
         frame.pack_propagate(False)  # Prevent frame from shrinking
 
         self.file_frame = ctk.CTkScrollableFrame(frame, label_text="Audio Files")
@@ -399,25 +399,26 @@ class AudioControllerApp(ctk.CTk):
 
     def _create_middle_panel_with_sliders(self):
         # Center panel for all controls
-        frame = ctk.CTkFrame(self)
-        frame.pack(side="left", fill="both", expand=True, padx=5, pady=10)
+        frame = ctk.CTkFrame(self, fg_color="transparent")
+        frame.pack(side="left", fill="both", expand=True, padx=5)
 
         self.sliders = {}
         self.value_labels = {}
         # Main controls with reduced range
-        for name, range_val in [('Gain', 12), ('Treble', 10), ('Bass', 10)]:
+        for name, range_val in [('Gain',20), ('Treble', 20), ('Bass', 20)]:
             row = ctk.CTkFrame(frame)
-            row.pack(fill="x", pady=(10, 0))
-            ctk.CTkLabel(row, text=f"{name}", width=80, anchor="e").pack(side="left")
-            val_label = ctk.CTkLabel(row, text="0 dB")
-            val_label.pack(side="right", padx=5)
+            row.pack(fill="x", pady=(12, 0))
+            ctk.CTkLabel(row, text=f"{name}", padx=5, anchor="e").pack(side="left")
+            val_label = ctk.CTkLabel(row, text="0 dB",anchor="e", width=40)
+            val_label.pack(side="right", padx=5, anchor="e")
             slider = ctk.CTkSlider(row, from_=-range_val, to=range_val, number_of_steps=40, button_color=self.accent_color)
             slider.set(0.0)
-            slider.pack(side="left", fill="x", expand=True, padx=5)
+            slider.pack(side="right",expand=False, ipadx=130, anchor="center") 
             slider.configure(command=lambda val, n=name: self._update_eq(n.lower(), val))
             self.sliders[name.lower()] = slider
             self.value_labels[name.lower()] = val_label
 
+            
         # Band sliders and value labels
         bands = [
             ("sub_bass", "Sub-bass", 20, 60),
@@ -430,13 +431,13 @@ class AudioControllerApp(ctk.CTk):
         ]
         for key, label, fmin, fmax in bands:
             row = ctk.CTkFrame(frame)
-            row.pack(fill="x", pady=(10, 0))
-            ctk.CTkLabel(row, text=f"{label} ({fmin}-{fmax} Hz)", width=160, anchor="e").pack(side="left")
-            val_label = ctk.CTkLabel(row, text="0 dB")
-            val_label.pack(side="right", padx=5)
+            row.pack(fill="x", pady=(12, 0))
+            ctk.CTkLabel(row, text=f"{label} ({fmin}-{fmax} Hz)", padx=5, anchor="e").pack(side="left")
+            val_label = ctk.CTkLabel(row, text="0 dB",anchor="e", width=40)
+            val_label.pack(side="right", padx=5, anchor="e")
             slider = ctk.CTkSlider(row, from_=-20.0, to=20.0, number_of_steps=40, button_color=self.accent_color)
             slider.set(0.0)
-            slider.pack(side="left", fill="x", expand=True, padx=5)
+            slider.pack(side="right",expand=False, ipadx=130, anchor="center") 
             slider.configure(command=lambda val, k=key: self._update_eq(k, val))
             self.sliders[key] = slider
             self.value_labels[key] = val_label
@@ -593,6 +594,25 @@ class AudioControllerApp(ctk.CTk):
         win = ctk.CTkToplevel(self)
         win.title(f"Bind Key - {os.path.basename(path)}")
         win.geometry("250x100")
+         # --- Center the window on top of the main app ---
+        win.update_idletasks()
+        main_x = self.winfo_x()
+        main_y = self.winfo_y()
+        main_w = self.winfo_width()
+        main_h = self.winfo_height()
+
+        win_w, win_h = 250, 100
+        x = main_x + (main_w // 2) - (win_w // 2)
+        y = main_y + (main_h // 2) - (win_h // 2)
+        win.geometry(f"{win_w}x{win_h}+{x}+{y}")
+
+        # --- Make it modal and focused ---
+        win.transient(self)         # attach to main window
+        win.grab_set()              # prevent clicking the main window
+        win.lift()
+        win.attributes("-topmost", True)
+        win.after_idle(win.attributes, "-topmost", False)
+        win.focus_force()
         ctk.CTkLabel(win, text="Press a key to bind to this track").pack(pady=10)
         win.bind("<KeyPress>", lambda e: self._set_track_keybind(e, path, win))
 
