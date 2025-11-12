@@ -78,7 +78,7 @@ class AudioPlayer(threading.Thread):
                     # skip the heavy per-band processing to see if filters are the cause
                     # of choppiness. This helps isolate CPU-bound issues.
                     if all(abs(float(v)) < 0.01 for v in self.eq_values.values()):
-                        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.1
+                        gain_db = float(self.eq_values.get('gain', 0.0)) * 0.25
                         gain_linear = 10.0 ** (gain_db / 20.0)
                         out_block = (block * gain_linear).astype('float32')
                         stream.write(out_block)
@@ -284,7 +284,8 @@ class AudioControllerApp(ctk.CTk):
         super().__init__()
         self.title("Audio Controller")
         self.geometry("1080x640")
-        self.resizable(False, False)
+        self.resizable(True, True)
+        self.minsize(1080, 460)
 
         # colors
         self.accent_color = "#017575"  # dark cyan for buttons
@@ -388,8 +389,8 @@ class AudioControllerApp(ctk.CTk):
         self.device_menu.pack(side="right", padx=10)
 
     def _create_left_panel(self):
-        frame = ctk.CTkFrame(self, width=350)
-        frame.pack(side="left", fill="y", padx=10, pady=11.5)
+        frame = ctk.CTkFrame(self)
+        frame.pack(side="left", fill="both", padx=10, pady=11.5, expand=True)
         frame.pack_propagate(False)  # Prevent frame from shrinking
 
         self.file_frame = ctk.CTkScrollableFrame(frame, label_text="Audio Files")
